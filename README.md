@@ -21,6 +21,8 @@ For your sample usage, we have provided an input file (input.csv) and sample fra
     ./tracking -i input.csv -o output.csv images/Pics_159.png images/Pics_160.png
 images/Pics_161.png images/Pics_162.png
 
+6. To make images green-channeled only, run ./togreen image_name.
+
 Code Architecture:
 
 main.cpp - self-contained Kalman filter and UI for mouse tracking.
