@@ -11,11 +11,14 @@
 using namespace std;
 using namespace cv;
 
+#ifndef POINT_H
+#define POINT_H
 typedef struct
 {
   int x;
   int y;
 } point;
+#endif
 
 int border = 255, thresh = 80, minArea = 20, dilateCount = -2, erodeCount = -2;
 
