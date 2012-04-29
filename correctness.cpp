@@ -21,7 +21,8 @@ typedef struct
 
 int indf(point p, vector<point> pl);
 
-/* int main ()
+/* Test main.
+int main ()
 {
   int pointcount = 1;
   
@@ -80,8 +81,7 @@ double computeMatches(vector<point> linp, vector<point> lout, vector<point> ainp
 	int ind1 = indf (ainp[i], linp);
 	int ind2 = indf (aout[i], lout);
 	if (ind1 == ind2) numcorrect++;
-	cout << "pre:" << i << "->" << ind1 << endl;
-	cout << "post:" << i << "->" << ind2 << endl;
+	// Other possible implementation of metric
 	//   {
 	// 	bool found = false;
 	// 	for (int j = 0; j < numcorrect; j++)

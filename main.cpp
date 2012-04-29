@@ -16,17 +16,27 @@ int frame_size = 500;
 
 struct point { int x,y; };
 // will track last and current mouse position at each loop iteration
-struct point curr_mouse = {-1,-1}, last_mouse;
+struct point curr_mouse = {-5,-5}, last_mouse;
 
 /*
  * Updates last and current mouse positions.
  */
-void on_mouse(int ev, int x_c, int y_c, int flag, void* param) {
+void mouse_update(int ev, int x_c, int y_c, int flag, void* param) {
 	last_mouse = curr_mouse;
 	curr_mouse.x = x_c;
 	curr_mouse.y = y_c;
 }
 
+void drawX(Mat canvas, Point p, CvScalar color, int len) {
+	line(canvas, Point( p.x - len, p.y - len),
+	Point(p.x + len, p.y + len), color, 2, CV_AA, 0);
+	line(canvas, Point( p.x + len, p.y - len),
+	Point(p.x - len, p.y + len), color, 2, CV_AA, 0);
+}
+
+/*
+ * Opens frame upon which user can hover mouse, and Kalman filter will begin tracking cursor.
+ */
 int main (int argc, char * args[]) {
 	
 	// Mat is the object that encapsulates images (pixel matrices) in openCV.
@@ -39,72 +49,69 @@ int main (int argc, char * args[]) {
 	// are observed by mouse).
     KalmanFilter kalman(4, 2, 0);
 
-	// Current (x, y, velocity_x, velocity_y) vector at each iteration.
-    Mat_<float> state_velocity(4, 1);
-
-	// Process 
-    Mat processNoise(4, 1, CV_32F);
-    Mat_<float> measurement(2,1); measurement.setTo(Scalar(0));
-    char code = (char)-1;
+	// Records current position of cursor.
+	Mat_<float> currPos(2,1); currPos.setTo(Scalar(0));
 	
-	namedWindow("Mouse Tracking");
-	setMouseCallback("Mouse Tracking", on_mouse, 0);
+	// Used for keyboard input to quit program.
+    char code = (char)-1;
+	namedWindow("Black and Yellow");
+	setMouseCallback("Black and Yellow", mouse_update, 0);
 	
     while (true) {
 		if (curr_mouse.x < 0 || curr_mouse.y < 0) {
-			imshow("Mouse Tracking", canvas);
+			imshow("Black and Yellow", canvas);
 			waitKey(30);
 			continue;
 		}
+		
+		// Initialize Kalman filter for mouse at mouse's on-screen position and with 0 velocity.
 		kalman.statePre.at<float>(0) = curr_mouse.x;
  		kalman.statePre.at<float>(1) = curr_mouse.y;
 		kalman.statePre.at<float>(2) = 0;
 		kalman.statePre.at<float>(3) = 0;
-		kalman.transitionMatrix = *(Mat_<float>(4, 4) << 1,0,0,0,   0,1,0,0,  0,0,1,0,  0,0,0,1);
 		
+		// For simplicity's sake, set the Kalman matrices as follows (discovered after a bit of tuning).
+		kalman.transitionMatrix = *(Mat_<float>(4, 4) << 1,0,0,0,   0,1,0,0,  0,0,1,0,  0,0,0,1);
         setIdentity(kalman.measurementMatrix);
         setIdentity(kalman.processNoiseCov, Scalar::all(1e-4));
         setIdentity(kalman.measurementNoiseCov, Scalar::all(1e-1));
         setIdentity(kalman.errorCovPost, Scalar::all(.1));
 		
+		// Make sure history of mouse and Kalman coordinates is cleared everytime mouse moves back
+		// on-screen.
 		mouse_coords.clear();
 		kalman_coords.clear();
 		
-        while (true)
-        {			
+        while (true) {
+	
+			// Record curent mouse cursor position.
+	        currPos(0) = curr_mouse.x;
+			currPos(1) = curr_mouse.y;
+			Point measPt(currPos(0),currPos(1));
+			mouse_coords.push_back(measPt);
+			
+			// Perform Kalman filter algorithm. First, predict next position of "particle."
+			// Then, correct it based on current mouse position.
             Mat prediction = kalman.predict();
             Point predictPt(prediction.at<float>(0),prediction.at<float>(1));
+			Mat estimated = kalman.correct(currPos);
+			Point estimated_pt(estimated.at<float>(0),estimated.at<float>(1));
+			kalman_coords.push_back(estimated_pt);
 			
-            measurement(0) = curr_mouse.x;
-			measurement(1) = curr_mouse.y;
-			
-			Point measPt(measurement(0),measurement(1));
-			mouse_coords.push_back(measPt);
-
-			Mat estimated = kalman.correct(measurement);
-			Point state_velocity_pt(estimated.at<float>(0),estimated.at<float>(1));
-			kalman_coords.push_back(state_velocity_pt);
-			
-#define drawCross( center, color, d )                                 \
-line( canvas, Point( center.x - d, center.y - d ),                \
-Point( center.x + d, center.y + d ), color, 2, CV_AA, 0); \
-line( canvas, Point( center.x + d, center.y - d ),                \
-Point( center.x - d, center.y + d ), color, 2, CV_AA, 0 )
-
+			// Update UI: redraw new mouse cursor point and Kalman (corrected) point.
             canvas = Scalar::all(0);
-            drawCross( state_velocity_pt, Scalar(255,255,255), 5 );
-            drawCross( measPt, Scalar(0,0,255), 5 );
-			
+            drawX(canvas, estimated_pt, Scalar(0,255,255), 5);
+            drawX(canvas, measPt, Scalar(0,100,100), 5);
 			for (int i = 0; i < mouse_coords.size()-1; i++) {
-				line(canvas, mouse_coords[i], mouse_coords[i+1], Scalar(255,255,0), 1);
+				line(canvas, mouse_coords[i], mouse_coords[i+1], Scalar(0,100,100), 1);
 			}
 			for (int i = 0; i < kalman_coords.size()-1; i++) {
-				line(canvas, kalman_coords[i], kalman_coords[i+1], Scalar(0,255,0), 1);
+				line(canvas, kalman_coords[i], kalman_coords[i+1], Scalar(0,255,255), 1);
 			}
-			
-            imshow( "Mouse Tracking", canvas );
+            imshow( "Black and Yellow", canvas );
+
+			// If user wants to quit, then break.
             code = (char)waitKey(100);
-			
             if( code == 'q' || code == 'Q' )
 	            break;
         }

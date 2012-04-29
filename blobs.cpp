@@ -30,9 +30,6 @@ vector<point> GetRegionDataArrayPoints(float RegionData[BLOBTOTALCOUNT][BLOBDATA
 	{
 		if(ThisRegion > 0 && RegionData[ThisRegion][0] < 0) break;
 		if(RegionData[ThisRegion][BLOBAREA] <= 0) break;
-    
-		// printf("x: %d  ", (int) RegionData[ThisRegion][BLOBSUMX]);	//sumx
-		// printf("y: %d  \n", (int) RegionData[ThisRegion][BLOBSUMY]);	//sumy
 
     point newPoint;
     newPoint.x = (int) RegionData[ThisRegion][BLOBSUMX];
@@ -44,32 +41,7 @@ vector<point> GetRegionDataArrayPoints(float RegionData[BLOBTOTALCOUNT][BLOBDATA
 }
     
 vector<point> identifyCells(IplImage* SampleImage)
-{
-	/* IplImage* GrayImage = 0;
-	IplImage* threshedImage = 0;
-	IplImage* LabeledImage = 0;
-	
-	int cols = SampleImage->width;
-	int rows = SampleImage->height;
-
-	// Make the sample picture into a gray image
-	GrayImage = cvCreateImage(cvSize(cols, rows), IPL_DEPTH_8U, 1);
-	cvCvtColor(SampleImage, GrayImage, CV_BGR2GRAY);
-
-	// Make it into a binary image
-	threshedImage = cvCreateImage(cvSize(cols, rows), IPL_DEPTH_8U, 1);
-	cvThreshold(GrayImage, threshedImage, thresh, border, CV_THRESH_BINARY);
-	cout << "Yo" << endl;
-
-	// Make sure that there are no isolated spots in the image
-	// cvErode(threshedImage, threshedImage, NULL, dilateCount);
-	// cvDilate(threshedImage, threshedImage, NULL, erodeCount);
-
-	// Make a placeholder for outputing a labeled image (Optional)
-	LabeledImage = cvCreateImage(cvSize(cols, rows), IPL_DEPTH_8U, 1);
-
-	int highRegionNum = BlobAnalysis(threshedImage, WorkingStorage, RegionData, 0, 0, cols, rows, (uchar)border, minArea, LabeledImage); */
-	
+{	
 			IplImage* GrayImage = 0;
 			IplImage* ThresholdedImage = 0;
 			IplImage* LabeledImage = 0;
